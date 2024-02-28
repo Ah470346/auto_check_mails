@@ -82,7 +82,7 @@ imap.once('ready', () => {
     fetchUnseenEmails();
 
     // Fetch unseen emails every 10 second
-    setInterval(fetchUnseenEmails, 10 * 1000);
+    setInterval(fetchUnseenEmails, 10 * 1000); // test
 });
 
 imap.once('error', (err) => {
