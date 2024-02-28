@@ -6,6 +6,30 @@ const simpleParser = require('mailparser').simpleParser;
 
 const path = require('path');
 
+const savedEmailIdsFile = 'has_save_mails_id.txt';
+
+function saveEmailId(id) {
+    if (!id) return;
+    fs.appendFileSync(savedEmailIdsFile, id + '\n');
+}
+
+function isEmailIdSaved(id) {
+  if (!fs.existsSync(savedEmailIdsFile)) {
+      fs.writeFileSync(savedEmailIdsFile, ''); // Create the file if it doesn't exist
+      return false;
+  }
+
+  let savedIds = [];
+  try {
+      savedIds = fs.readFileSync(savedEmailIdsFile, 'utf8').split('\n');
+  } catch (error) {
+      if (error.code !== 'ENOENT') {
+          throw error;
+      }
+  }
+  return savedIds.includes(id);
+}
+
 function saveEmailContent(content) {
     const folder = 'emails';
     const filename = `email_${new Date().getTime()}.txt`;
@@ -28,7 +52,7 @@ function openInbox(cb) {
     imap.openBox(mailbox, true, cb);
 }
 
-imap.once('ready', () => {
+function fetchUnseenEmails() {
     openInbox((err, box) => {
         if (err) throw err;
         imap.search(['UNSEEN'], (err, results) => {
@@ -38,21 +62,27 @@ imap.once('ready', () => {
                 msg.on('body', (stream, info) => {
                     simpleParser(stream, async (err, parsed) => {
                         if (err) throw err;
-                        const content = `
-                            From: ${parsed.from.text}\n
-                            Subject: ${parsed.subject}\n
-                            Date: ${parsed.date}\n\n
-                            Body:\n${parsed.text}`;
-                        saveEmailContent(content);
+                        const emailId = parsed.messageId;
+                        if (!isEmailIdSaved(emailId)) {
+                            saveEmailContent(parsed.text);
+                            saveEmailId(emailId);
+                        }
                     });
                 });
             });
             f.once('end', () => {
                 console.log('No more emails to fetch');
-                imap.end();
             });
         });
     });
+}
+
+imap.once('ready', () => {
+    // Initial fetch
+    fetchUnseenEmails();
+
+    // Fetch unseen emails every 5 minutes
+    setInterval(fetchUnseenEmails, 10 * 1000); // 5 minutes in milliseconds
 });
 
 imap.once('error', (err) => {
