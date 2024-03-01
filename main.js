@@ -7,6 +7,24 @@ const simpleParser = require('mailparser').simpleParser;
 const path = require('path');
 
 const savedEmailIdsFile = 'has_save_mails_id.txt';
+const folder = 'emails';
+const filename = 'email_content.txt';
+const filePath = path.join(folder, filename);
+
+function createFile () {
+    // create file has_save_mails_id.txt
+    if (!fs.existsSync(savedEmailIdsFile)) {
+        fs.writeFileSync(savedEmailIdsFile, ''); // Create the file if it doesn't exist
+    }
+
+    // create file emails/email_content.txt
+    if (!fs.existsSync(filePath)) {
+        fs.mkdir(folder, { recursive: true }, (err) => {
+            if (err) throw err;
+            fs.writeFileSync(filePath, '');
+        });
+    }
+}
 
 function saveEmailId(id) {
     if (!id) return;
@@ -14,34 +32,39 @@ function saveEmailId(id) {
 }
 
 function isEmailIdSaved(id) {
-  if (!fs.existsSync(savedEmailIdsFile)) {
-      fs.writeFileSync(savedEmailIdsFile, ''); // Create the file if it doesn't exist
-      return false;
-  }
+    if (!fs.existsSync(savedEmailIdsFile)) return false;
 
-  let savedIds = [];
-  try {
-      savedIds = fs.readFileSync(savedEmailIdsFile, 'utf8').split('\n');
-  } catch (error) {
-      if (error.code !== 'ENOENT') {
-          throw error;
-      }
-  }
-  return savedIds.includes(id);
+    let savedIds = [];
+    try {
+        savedIds = fs.readFileSync(savedEmailIdsFile, 'utf8').split('\n');
+    } catch (error) {
+        if (error.code !== 'ENOENT') {
+            throw error;
+        }
+    }
+    return savedIds.includes(id);
 }
 
+/* save each email 1 file */
+// function saveEmailContent(content) {
+//     const folder = 'emails';
+//     const filename = `email_${new Date().getTime()}.txt`;
+//     const filePath = path.join(folder, filename);
+
+//     fs.mkdir(folder, { recursive: true }, (err) => {
+//         if (err) throw err;
+        
+//         fs.writeFile(filePath, content, (err) => {
+//             if (err) throw err;
+//             console.log(`Email content saved to ${filePath}`);
+//         });
+//     });
+// }
+
 function saveEmailContent(content) {
-    const folder = 'emails';
-    const filename = `email_${new Date().getTime()}.txt`;
-    const filePath = path.join(folder, filename);
-
     fs.mkdir(folder, { recursive: true }, (err) => {
-        if (err) throw err;
-
-        fs.writeFile(filePath, content, (err) => {
             if (err) throw err;
-            console.log(`Email content saved to ${filePath}`);
-        });
+            fs.appendFileSync(filePath, content + '\n');
     });
 }
 
@@ -79,7 +102,8 @@ function fetchUnseenEmails() {
 
 imap.once('ready', () => {
     // Initial fetch
-    fetchUnseenEmails();
+    // fetchUnseenEmails();
+    createFile ();
 
     // Fetch unseen emails every 10 second
     setInterval(fetchUnseenEmails, 10 * 1000); // test
