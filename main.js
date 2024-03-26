@@ -10,6 +10,7 @@ const savedEmailIdsFile = 'has_save_mails_id.txt';
 const folder = 'emails';
 const filename = 'email_content.txt';
 const filePath = path.join(folder, filename);
+const BANK_EMAIL = 'mailalert@acb.com.vn'
 
 function createFile () {
     // create file has_save_mails_id.txt
@@ -45,6 +46,10 @@ function isEmailIdSaved(id) {
     return savedIds.includes(id);
 }
 
+function isEmailTransfer(email) {
+    return email === BANK_EMAIL;
+}
+
 /* save each email 1 file */
 // function saveEmailContent(content) {
 //     const folder = 'emails';
@@ -68,6 +73,17 @@ function saveEmailContent(content) {
     });
 }
 
+function formatEmailContent(content) {
+    if (!content) return;
+    const moneyFind = content.split('Credit');
+    const money = moneyFind[1].split(' VND.')[0];
+
+    const accountFind = content.split('NAP ');
+    const account = accountFind[1].split('.')[0];
+
+    // clear account space
+    return account.split(' ')[0] + money;
+}
 // Connect to the IMAP server and retrieve emails
 const imap = new Imap(imapConfig);
 
@@ -79,23 +95,34 @@ function fetchUnseenEmails() {
     openInbox((err, box) => {
         if (err) throw err;
         imap.search(['UNSEEN'], (err, results) => {
-            if (err) throw err;
-            const f = imap.fetch(results, { bodies: '' });
-            f.on('message', (msg, seqno) => {
-                msg.on('body', (stream, info) => {
-                    simpleParser(stream, async (err, parsed) => {
-                        if (err) throw err;
-                        const emailId = parsed.messageId;
-                        if (!isEmailIdSaved(emailId)) {
-                            saveEmailContent(parsed.text);
-                            saveEmailId(emailId);
-                        }
+            if (err) console.log(err);
+            try {
+                const f = imap.fetch(results, { bodies: '' });
+                f.on('message', (msg, seqno) => {
+                    msg.on('body', (stream, info) => {
+                        simpleParser(stream, async (err, parsed) => {
+                            if (err) throw err;
+                            const emailId = parsed.messageId;
+                            const emailAddress = parsed.from.text;
+                            if (!emailId || !emailAddress) return;
+                            if (!isEmailIdSaved(emailId) && isEmailTransfer(emailAddress)) {
+                                const content = formatEmailContent(parsed.text)
+                                saveEmailContent(content);
+                                saveEmailId(emailId);
+                            }
+                        });
                     });
                 });
-            });
-            f.once('end', () => {
-                console.log('No more emails to fetch');
-            });
+                f.once('end', () => {
+                    console.log('No more emails to fetch');
+                });
+            } catch (error) {
+                if (error.message === 'Nothing to fetch') {
+                    console.log(error.message);
+                } else {
+                    throw error;
+                }
+            }
         });
     });
 }
