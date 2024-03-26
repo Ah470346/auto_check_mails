@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { imapConfig, mailbox } = require('./config'); // assuming you have a separate config file
+const imapConfig = require('./config'); // assuming you have a separate config file
 
 const Imap = require('imap');
 const simpleParser = require('mailparser').simpleParser;
@@ -11,6 +11,7 @@ const folder = 'emails';
 const filename = 'email_content.txt';
 const filePath = path.join(folder, filename);
 const BANK_EMAIL = 'mailalert@acb.com.vn'
+const mailbox = 'INBOX' // The mailbox/folder you want to check for new emails
 
 function createFile () {
     // create file has_save_mails_id.txt
