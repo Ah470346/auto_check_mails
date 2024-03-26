@@ -18,13 +18,13 @@ function createFile () {
         fs.writeFileSync(savedEmailIdsFile, ''); // Create the file if it doesn't exist
     }
 
-    // create file emails/email_content.txt
-    if (!fs.existsSync(filePath)) {
-        fs.mkdir(folder, { recursive: true }, (err) => {
-            if (err) throw err;
-            fs.writeFileSync(filePath, '');
-        });
-    }
+    /* create file emails/email_content.txt just apply for save to the same file */
+    // if (!fs.existsSync(filePath)) {
+    //     fs.mkdir(folder, { recursive: true }, (err) => {
+    //         if (err) throw err;
+    //         fs.writeFileSync(filePath, '');
+    //     });
+    // }
 }
 
 function saveEmailId(id) {
@@ -51,27 +51,28 @@ function isEmailTransfer(email) {
 }
 
 /* save each email 1 file */
-// function saveEmailContent(content) {
-//     const folder = 'emails';
-//     const filename = `email_${new Date().getTime()}.txt`;
-//     const filePath = path.join(folder, filename);
-
-//     fs.mkdir(folder, { recursive: true }, (err) => {
-//         if (err) throw err;
-        
-//         fs.writeFile(filePath, content, (err) => {
-//             if (err) throw err;
-//             console.log(`Email content saved to ${filePath}`);
-//         });
-//     });
-// }
-
 function saveEmailContent(content) {
+    const folder = 'emails';
+    const filename = `email_${new Date().getTime()}.txt`;
+    const filePath = path.join(folder, filename);
+
     fs.mkdir(folder, { recursive: true }, (err) => {
+        if (err) throw err;
+        
+        fs.writeFile(filePath, content, (err) => {
             if (err) throw err;
-            fs.appendFileSync(filePath, content + '\n');
+            console.log(`Email content saved to ${filePath}`);
+        });
     });
 }
+
+/* save to the same file */
+// function saveEmailContent(content) {
+//     fs.mkdir(folder, { recursive: true }, (err) => {
+//             if (err) throw err;
+//             fs.appendFileSync(filePath, content + '\n');
+//     });
+// }
 
 function formatEmailContent(content) {
     if (!content) return;
