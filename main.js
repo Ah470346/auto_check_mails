@@ -90,16 +90,16 @@ function formatEmailContent(content) {
 const imap = new Imap(imapConfig);
 
 function openInbox(cb) {
-    imap.openBox(mailbox, true, cb);
+    imap.openBox(mailbox, false, cb);
 }
 
 function fetchUnseenEmails() {
     openInbox((err, box) => {
         if (err) throw err;
         imap.search(['UNSEEN'], (err, results) => {
-            if (err) console.log(err);
+            if (err) throw error;
             try {
-                const f = imap.fetch(results, { bodies: '' });
+                const f = imap.fetch(results, { bodies: '', markSeen: true });
                 f.on('message', (msg, seqno) => {
                     msg.on('body', (stream, info) => {
                         simpleParser(stream, async (err, parsed) => {

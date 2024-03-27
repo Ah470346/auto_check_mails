@@ -6,5 +6,5 @@ module.exports = {
     tls: true, // Enable TLS/SSL
     tlsOptions: {
       rejectUnauthorized: false // Accept self-signed certificates
-    }
+    },
 };
